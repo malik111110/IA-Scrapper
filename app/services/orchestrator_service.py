@@ -4,9 +4,11 @@ from typing import List
 from app.services.crawler_service import CrawlerService
 from app.services.llm_service import llm_service
 from app.schemas.opportunity import Opportunity, TechSignal
-from app.core.prompts import SYSTEM_PROMPT, USER_EXTRACTION_PROMPT
-from app.services.normalization_service import normalization_service
 from app.core.prompts import SYSTEM_PROMPT, USER_EXTRACTION_PROMPT, TECH_NORMALIZATION_PROMPT
+from app.services.normalization_service import normalization_service
+from app.core.database import AsyncSessionLocal
+from app.models.opportunity import OpportunityModel, TechSignalModel
+from sqlalchemy import select
 
 class OrchestratorService:
     def __init__(self):
@@ -39,7 +41,49 @@ class OrchestratorService:
             else:
                 print(f"Skipping duplicate opportunity (Domain/Fuzzy): {normalized_opp.company_name}")
         
+        # 4. Save to Database
+        if final_opportunities:
+            await self._save_to_db(final_opportunities)
+            
         return final_opportunities
+
+    async def _save_to_db(self, opportunities: List[Opportunity]):
+        """Persists the opportunities and their signals to Neon."""
+        async with AsyncSessionLocal() as session:
+            # We don't use begin() here if we want to manage it manually or just use session.add
+            # But async session context usually handles it well. 
+            for opp in opportunities:
+                # Check if URL already exists in DB to prevent duplicates safely
+                stmt = select(OpportunityModel).where(OpportunityModel.url == opp.url)
+                result = await session.execute(stmt)
+                if result.scalar_one_or_none():
+                    print(f"Opportunity for {opp.url} already in database. Skipping save.")
+                    continue
+
+                # Create Database Model
+                db_opp = OpportunityModel(
+                    company_name=opp.company_name,
+                    sector=opp.sector,
+                    url=opp.url,
+                    score=opp.score,
+                    classification=opp.classification,
+                    tech_stack=opp.tech_stack,
+                    summary=opp.summary
+                )
+                
+                # Add Signals
+                for s in opp.signals:
+                    db_signal = TechSignalModel(
+                        category=s.category,
+                        description=s.description,
+                        urgency=s.urgency
+                    )
+                    db_opp.signals.append(db_signal)
+                
+                session.add(db_opp)
+            
+            await session.commit()
+            print(f"Successfully saved {len(opportunities)} opportunities to Neon.")
 
     async def _refine_tech_stack_with_llm(self, opportunity: Opportunity):
         """Uses LLM to clean up and canonicalize tech stack if rules weren't enough."""
