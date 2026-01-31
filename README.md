@@ -1,6 +1,6 @@
-# B2B Opportunity Radar (MVP)
+# B2B Opportunity Radar (MVP) Tech Sector 
 
-Detect where companies are spending or about to spend money on tech so agencies can pitch at the right moment. 
+Detect where companies are spending or about to spend money on tech so agencies can pitch at the right moment.
 This tool scrapes public signals (job boards, blogs, press releases) to identify intent, scoring opportunities based on hiring velocity, funding, and tech stack changes.
 
 ## 🚀 Features

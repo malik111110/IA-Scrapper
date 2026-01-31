@@ -1,14 +1,17 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class TechSignal(BaseModel):
     id: Optional[int] = None
     category: str
     description: str
     urgency: int = Field(ge=1, le=5)
-    
+
     model_config = {"from_attributes": True}
+
 
 class Opportunity(BaseModel):
     id: Optional[int] = None
@@ -24,9 +27,11 @@ class Opportunity(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
 class OrchestratorConfig(BaseModel):
     urls: List[str]
     instruction: Optional[str] = None
+
 
 class OpportunityListResponse(BaseModel):
     total: int
