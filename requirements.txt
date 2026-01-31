@@ -3,3 +3,5 @@ uvicorn
 crawl4ai
 openai
 pydantic-settings
+tldextract
+rapidfuzz

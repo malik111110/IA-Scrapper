@@ -5,18 +5,62 @@ from app.services.crawler_service import CrawlerService
 from app.services.llm_service import llm_service
 from app.schemas.opportunity import Opportunity, TechSignal
 from app.core.prompts import SYSTEM_PROMPT, USER_EXTRACTION_PROMPT
+from app.services.normalization_service import normalization_service
+from app.core.prompts import SYSTEM_PROMPT, USER_EXTRACTION_PROMPT, TECH_NORMALIZATION_PROMPT
 
 class OrchestratorService:
     def __init__(self):
         self.crawler_service = CrawlerService()
 
     async def run_pipeline(self, urls: List[str]) -> List[Opportunity]:
+        # Reset normalization cache for a new run
+        normalization_service.clear_cache()
+        
         tasks = [self.process_single_url(url) for url in urls]
         results = await asyncio.gather(*tasks)
-        # Filter out None results (failed scrapes/extractions)
-        return [r for r in results if r is not None]
+        
+        # Filter out None results
+        processed_results = [r for r in results if r is not None]
+        
+        # Normalization & Deduplication
+        final_opportunities = []
+        for opp in processed_results:
+            # 1. Normalize name and tech stack (Rule-based)
+            normalized_opp = normalization_service.normalize_opportunity(opp)
+            
+            # 2. Advanced Deduplication (Domain + Fuzzy Name)
+            if not normalization_service.is_duplicate(normalized_opp.company_name, normalized_opp.url):
+                # 3. Optional: LLM-based Tech Stack Refinement
+                # Only if the rule-based normalization left us with generic or too few tags
+                if len(normalized_opp.tech_stack) < 3 or any(len(t) < 3 for t in normalized_opp.tech_stack):
+                   await self._refine_tech_stack_with_llm(normalized_opp)
+                
+                final_opportunities.append(normalized_opp)
+            else:
+                print(f"Skipping duplicate opportunity (Domain/Fuzzy): {normalized_opp.company_name}")
+        
+        return final_opportunities
+
+    async def _refine_tech_stack_with_llm(self, opportunity: Opportunity):
+        """Uses LLM to clean up and canonicalize tech stack if rules weren't enough."""
+        raw_tech = ", ".join(opportunity.tech_stack)
+        prompt = TECH_NORMALIZATION_PROMPT.format(tech_terms=raw_tech)
+        
+        llm_response = await llm_service.process_content("You are a tech stack expert.", prompt)
+        if llm_response and "Error" not in llm_response:
+            # Parse comma separated list
+            new_tech = [t.strip() for t in llm_response.split(",") if t.strip()]
+            if new_tech:
+                # Apply one last rule-based pass to ensure canonical names
+                opportunity.tech_stack = normalization_service.normalize_tech_stack(new_tech)
 
     async def process_single_url(self, url: str) -> Opportunity:
+        # 0. Early Exit: Domain-based check (before expensive LLM call)
+        domain = normalization_service.extract_domain(url)
+        if domain and domain in normalization_service._processed_domains:
+            print(f"Skipping URL {url} - Domain {domain} already processed.")
+            return None
+
         # 1. Scrape
         crawl_result = await self.crawler_service.crawl_url(url)
         if not crawl_result.success:
@@ -36,11 +80,12 @@ class OrchestratorService:
             
             data = json.loads(cleaned_json)
             
-            # Simple Scoring Heuristic (placeholder for now)
+            # Simple Scoring Heuristic
             base_score = 0
-            signals = [TechSignal(**s) for s in data.get("signals", [])]
+            signals_data = data.get("signals", [])
+            signals = [TechSignal(**s) for s in signals_data]
             for s in signals:
-                base_score += s.urgency * 2  # Higher urgency = higher score
+                base_score += s.urgency * 2
             
             classification = "Low agency fit"
             if base_score > 15:
