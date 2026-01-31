@@ -19,7 +19,17 @@ def test_company_normalization():
 
 
 def test_tech_stack_normalization():
-    tech_stack = ["react.js", "NextJS", "aws", "postgres", "Docker", "python", "software development", "FastAPI", "Rest API"]
+    tech_stack = [
+        "react.js",
+        "NextJS",
+        "aws",
+        "postgres",
+        "Docker",
+        "python",
+        "software development",
+        "FastAPI",
+        "Rest API",
+    ]
     expected = ["AWS", "Docker", "FastAPI", "Next.js", "PostgreSQL", "Python", "React"]
 
     result = normalization_service.normalize_tech_stack(tech_stack)
