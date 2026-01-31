@@ -2,13 +2,14 @@ from typing import List
 from fastapi import APIRouter, HTTPException
 from app.schemas.opportunity import MatchRequest, MatchResponse
 from app.services.search_service import search_service
-from app.services.orchestrator_service import orchestrator
+from app.services.crawler_service import CrawlerService
 from app.services.llm_service import llm_service
 from app.core.prompts import MATCHMAKER_SYSTEM_PROMPT, MATCHMAKER_EXTRACTION_PROMPT
 import json
 import asyncio
 
 router = APIRouter()
+crawler_service = CrawlerService()
 
 @router.post("/chat", response_model=List[MatchResponse])
 async def match_company(request: MatchRequest):
@@ -39,7 +40,7 @@ async def match_company(request: MatchRequest):
 async def process_match(url: str, user_info: str) -> MatchResponse:
     try:
         # Scrape
-        crawl_result = await orchestrator.crawler_service.crawl_url(url)
+        crawl_result = await crawler_service.crawl_url(url)
         if not crawl_result.success:
             return None
         
