@@ -23,3 +23,13 @@ If it's a blog post, look for migration or scaling signals.
 Content:
 {content}
 """
+
+TECH_NORMALIZATION_PROMPT = """
+Convert the following raw list of technologies into a canonical, professional list of tech names.
+- Remove generic terms (e.g., 'Software', 'DevOps', 'Mobile').
+- Standardize variations (e.g., 'ReactJS' -> 'React').
+- Output ONLY the clean names as a comma-separated list.
+
+Raw Tech Terms:
+{tech_terms}
+"""

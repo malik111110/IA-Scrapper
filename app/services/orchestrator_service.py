@@ -6,6 +6,7 @@ from app.services.llm_service import llm_service
 from app.schemas.opportunity import Opportunity, TechSignal
 from app.core.prompts import SYSTEM_PROMPT, USER_EXTRACTION_PROMPT
 from app.services.normalization_service import normalization_service
+from app.core.prompts import SYSTEM_PROMPT, USER_EXTRACTION_PROMPT, TECH_NORMALIZATION_PROMPT
 
 class OrchestratorService:
     def __init__(self):
@@ -24,18 +25,42 @@ class OrchestratorService:
         # Normalization & Deduplication
         final_opportunities = []
         for opp in processed_results:
-            # First normalize
+            # 1. Normalize name and tech stack (Rule-based)
             normalized_opp = normalization_service.normalize_opportunity(opp)
             
-            # Then check for duplicates (based on normalized company name)
-            if not normalization_service.is_duplicate(normalized_opp.company_name):
+            # 2. Advanced Deduplication (Domain + Fuzzy Name)
+            if not normalization_service.is_duplicate(normalized_opp.company_name, normalized_opp.url):
+                # 3. Optional: LLM-based Tech Stack Refinement
+                # Only if the rule-based normalization left us with generic or too few tags
+                if len(normalized_opp.tech_stack) < 3 or any(len(t) < 3 for t in normalized_opp.tech_stack):
+                   await self._refine_tech_stack_with_llm(normalized_opp)
+                
                 final_opportunities.append(normalized_opp)
             else:
-                print(f"Skipping duplicate opportunity for company: {normalized_opp.company_name}")
+                print(f"Skipping duplicate opportunity (Domain/Fuzzy): {normalized_opp.company_name}")
         
         return final_opportunities
 
+    async def _refine_tech_stack_with_llm(self, opportunity: Opportunity):
+        """Uses LLM to clean up and canonicalize tech stack if rules weren't enough."""
+        raw_tech = ", ".join(opportunity.tech_stack)
+        prompt = TECH_NORMALIZATION_PROMPT.format(tech_terms=raw_tech)
+        
+        llm_response = await llm_service.process_content("You are a tech stack expert.", prompt)
+        if llm_response and "Error" not in llm_response:
+            # Parse comma separated list
+            new_tech = [t.strip() for t in llm_response.split(",") if t.strip()]
+            if new_tech:
+                # Apply one last rule-based pass to ensure canonical names
+                opportunity.tech_stack = normalization_service.normalize_tech_stack(new_tech)
+
     async def process_single_url(self, url: str) -> Opportunity:
+        # 0. Early Exit: Domain-based check (before expensive LLM call)
+        domain = normalization_service.extract_domain(url)
+        if domain and domain in normalization_service._processed_domains:
+            print(f"Skipping URL {url} - Domain {domain} already processed.")
+            return None
+
         # 1. Scrape
         crawl_result = await self.crawler_service.crawl_url(url)
         if not crawl_result.success:
