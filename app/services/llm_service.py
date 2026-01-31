@@ -8,7 +8,9 @@ class LLMService:
         self.client = None
         if settings.GEMINI_API_KEY:
             self.client = AsyncOpenAI(
-                api_key=settings.GEMINI_API_KEY, base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+                api_key=settings.GEMINI_API_KEY,
+                base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+                timeout=30.0,
             )
 
     async def process_content(self, instruction: str, content: str):

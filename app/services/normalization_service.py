@@ -148,7 +148,9 @@ class NormalizationService:
             clean_tech = tech.lower().strip()
 
             # Skip generic noise and very short strings
-            if any(term in clean_tech for term in self.GENERIC_TECH_TERMS) or len(clean_tech) < 2:
+            # Use whole-word matching to avoid false positives (e.g., "api" in "fastapi")
+            tech_words = set(re.findall(r"[a-z0-9]+", clean_tech))
+            if (tech_words & self.GENERIC_TECH_TERMS) or len(clean_tech) < 2:
                 continue
 
             # Map based on dictionary

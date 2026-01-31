@@ -11,10 +11,10 @@ async def test_run():
         "https://openai.com/jobs",
     ]
 
-    print(f"🚀 Starting Full Pipeline for {len(urls)} URLs...")
+    print(f" Starting Full Pipeline for {len(urls)} URLs...")
     opportunities = await orchestrator.run_pipeline(urls)
 
-    print("\n✅ Pipeline Finished!")
+    print("\n Pipeline Finished!")
     print(f"Total Unique Opportunities: {len(opportunities)}")
 
     for opp in opportunities:
