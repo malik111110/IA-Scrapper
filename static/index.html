@@ -19,22 +19,53 @@
             <p class="subtitle">Detecting high-probability tech outsourcing signals in real-time</p>
         </header>
 
-        <div class="controls">
-            <div class="stats">
-                <div class="stat-item">
-                    <span id="total-count" class="stat-value">0</span>
-                    <span class="stat-label">OPPORTUNITIES</span>
-                </div>
-                <div class="stat-item">
-                    <span id="high-prob-count" class="stat-value">0</span>
-                    <span class="stat-label">HIGH PROBABILITY</span>
-                </div>
-            </div>
-            <button class="btn-refresh" onclick="fetchOpportunities()">Refresh Feed</button>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('radar-tab')">Opportunity Radar</button>
+            <button class="tab-btn" onclick="showTab('matchmaker-tab')">Strategic Matchmaker</button>
         </div>
 
-        <div id="dashboard" class="dashboard-grid">
-            <div class="loading pulse">Scanning the tech ecosystem...</div>
+        <div id="radar-tab" class="tab-content active">
+            <div class="controls">
+                <div class="stats">
+                    <div class="stat-item">
+                        <span id="total-count" class="stat-value">0</span>
+                        <span class="stat-label">OPPORTUNITIES</span>
+                    </div>
+                    <div class="stat-item">
+                        <span id="high-prob-count" class="stat-value">0</span>
+                        <span class="stat-label">HIGH PROBABILITY</span>
+                    </div>
+                </div>
+                <button class="btn-refresh" onclick="fetchOpportunities()">Refresh Feed</button>
+            </div>
+
+            <div id="dashboard" class="dashboard-grid">
+                <div class="loading pulse">Scanning the tech ecosystem...</div>
+            </div>
+        </div>
+
+        <div id="matchmaker-tab" class="tab-content">
+            <div class="matchmaker-container">
+                <div class="matchmaker-input card">
+                    <h3>Describe Your Business</h3>
+                    <textarea id="business-info"
+                        placeholder="Example: My company specializes in React and Node.js development..."></textarea>
+
+                    <h3>What should I search for?</h3>
+                    <div class="search-row">
+                        <input type="text" id="match-query" placeholder="e.g., 'React Developer', 'DevOps engineer'...">
+                        <button class="btn-primary" onclick="runMatchmaker()">Find Matches</button>
+                    </div>
+                    <div class="platform-chips">
+                        <label><input type="checkbox" checked value="indeed"> Indeed</label>
+                        <label><input type="checkbox" checked value="openclassrooms"> OpenClassrooms</label>
+                    </div>
+                </div>
+
+                <div id="matchmaker-results" class="results-container">
+                    <div class="placeholder-msg">Your strategic matches will appear here.</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -98,6 +129,65 @@
             document.getElementById('total-count').innerText = data.total;
             const highProb = data.opportunities.filter(o => o.classification.includes('High')).length;
             document.getElementById('high-prob-count').innerText = highProb;
+        }
+
+        async function runMatchmaker() {
+            const resultsContainer = document.getElementById('matchmaker-results');
+            const businessInfo = document.getElementById('business-info').value;
+            const query = document.getElementById('match-query').value;
+
+            if (!businessInfo || !query) {
+                alert('Please provide both business info and a search query.');
+                return;
+            }
+
+            resultsContainer.innerHTML = '<div class="loading pulse">Searching and matching across platforms...</div>';
+
+            try {
+                const response = await fetch('/api/v1/matchmaker/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_company_info: businessInfo,
+                        search_query: query,
+                        platforms: ['indeed', 'openclassrooms']
+                    })
+                });
+
+                if (!response.ok) throw new Error('Matchmaker service failed');
+
+                const matches = await response.json();
+                renderMatches(matches);
+            } catch (error) {
+                resultsContainer.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function renderMatches(matches) {
+            const container = document.getElementById('matchmaker-results');
+            if (matches.length === 0) {
+                container.innerHTML = '<div class="loading">No strong matches found for those criteria.</div>';
+                return;
+            }
+
+            container.innerHTML = matches.map(match => `
+                <div class="match-card card" onclick="window.open('${match.url}', '_blank')">
+                    <div class="match-score">Match Score: ${match.matching_score}%</div>
+                    <div class="match-company">${match.company_name}</div>
+                    <div class="match-fit">${match.fit_analysis}</div>
+                    <div class="match-tech">
+                        ${match.tech_stack.map(t => `<span class="tech-tag">${t}</span>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
         }
 
         // Initial fetch
