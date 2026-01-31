@@ -5,16 +5,35 @@ from app.services.crawler_service import CrawlerService
 from app.services.llm_service import llm_service
 from app.schemas.opportunity import Opportunity, TechSignal
 from app.core.prompts import SYSTEM_PROMPT, USER_EXTRACTION_PROMPT
+from app.services.normalization_service import normalization_service
 
 class OrchestratorService:
     def __init__(self):
         self.crawler_service = CrawlerService()
 
     async def run_pipeline(self, urls: List[str]) -> List[Opportunity]:
+        # Reset normalization cache for a new run
+        normalization_service.clear_cache()
+        
         tasks = [self.process_single_url(url) for url in urls]
         results = await asyncio.gather(*tasks)
-        # Filter out None results (failed scrapes/extractions)
-        return [r for r in results if r is not None]
+        
+        # Filter out None results
+        processed_results = [r for r in results if r is not None]
+        
+        # Normalization & Deduplication
+        final_opportunities = []
+        for opp in processed_results:
+            # First normalize
+            normalized_opp = normalization_service.normalize_opportunity(opp)
+            
+            # Then check for duplicates (based on normalized company name)
+            if not normalization_service.is_duplicate(normalized_opp.company_name):
+                final_opportunities.append(normalized_opp)
+            else:
+                print(f"Skipping duplicate opportunity for company: {normalized_opp.company_name}")
+        
+        return final_opportunities
 
     async def process_single_url(self, url: str) -> Opportunity:
         # 1. Scrape
@@ -36,11 +55,12 @@ class OrchestratorService:
             
             data = json.loads(cleaned_json)
             
-            # Simple Scoring Heuristic (placeholder for now)
+            # Simple Scoring Heuristic
             base_score = 0
-            signals = [TechSignal(**s) for s in data.get("signals", [])]
+            signals_data = data.get("signals", [])
+            signals = [TechSignal(**s) for s in signals_data]
             for s in signals:
-                base_score += s.urgency * 2  # Higher urgency = higher score
+                base_score += s.urgency * 2
             
             classification = "Low agency fit"
             if base_score > 15:
