@@ -1,12 +1,17 @@
 import React from 'react';
-import { Target, Settings, HelpCircle, Zap, ShieldCheck } from 'lucide-react';
+import { Target, Settings, HelpCircle, Zap, ShieldCheck, Building2 } from 'lucide-react';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+    currentView: 'matchmaker' | 'company';
+    onViewChange: (view: 'matchmaker' | 'company') => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
     return (
         <aside className="sidebar p-0 overflow-hidden">
             {/* Brand Section */}
             <div className="p-8 pb-10">
-                <div className="flex items-center gap-3.5 group cursor-pointer">
+                <div className="flex items-center gap-3.5 group cursor-pointer" onClick={() => onViewChange('matchmaker')}>
                     <div className="relative">
                         <div className="bg-blue-600 w-11 h-11 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform duration-300">
                             <Zap size={24} className="text-white fill-blue-200/20" />
@@ -24,13 +29,33 @@ export const Sidebar: React.FC = () => {
             <nav className="flex-1 px-4 space-y-1.5">
                 <p className="px-4 mb-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Platform</p>
 
-                <div
-                    className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold bg-blue-600/10 text-white shadow-sm ring-1 ring-blue-500/20 group cursor-default"
+                <button
+                    onClick={() => onViewChange('matchmaker')}
+                    className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all group ${currentView === 'matchmaker'
+                            ? 'bg-blue-600/10 text-white shadow-sm ring-1 ring-blue-500/20'
+                            : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                        }`}
                 >
-                    <Target size={20} className="text-blue-500" />
-                    <span className="flex-1 text-left">Strategic Matchmaker</span>
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
-                </div>
+                    <Target size={20} className={currentView === 'matchmaker' ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'} />
+                    <span className="flex-1 text-left">Matchmaker</span>
+                    {currentView === 'matchmaker' && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+                    )}
+                </button>
+
+                <button
+                    onClick={() => onViewChange('company')}
+                    className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all group ${currentView === 'company'
+                            ? 'bg-blue-600/10 text-white shadow-sm ring-1 ring-blue-500/20'
+                            : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                        }`}
+                >
+                    <Building2 size={20} className={currentView === 'company' ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'} />
+                    <span className="flex-1 text-left">Company profile</span>
+                    {currentView === 'company' && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+                    )}
+                </button>
             </nav>
 
             {/* Bottom Section */}
@@ -66,4 +91,3 @@ export const Sidebar: React.FC = () => {
         </aside>
     );
 };
-

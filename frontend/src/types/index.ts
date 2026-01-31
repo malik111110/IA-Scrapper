@@ -7,3 +7,22 @@ export interface MatchResponse {
     tech_stack: string[];
     summary: string;
 }
+
+export interface CompanyProfile {
+    id: number;
+    name: string;
+    description: string;
+    services: string[];
+    equipment: string[];
+    experience_years: number;
+    specialties: string[];
+    mission: string;
+    target_audience: string;
+    website: string;
+    contact_email: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export type CompanyProfileCreate = Omit<CompanyProfile, 'id' | 'created_at' | 'updated_at'>;
+export type CompanyProfileUpdate = Partial<CompanyProfileCreate>;

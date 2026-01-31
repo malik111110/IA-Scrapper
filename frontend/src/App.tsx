@@ -1,23 +1,29 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from './components/Sidebar';
 import { MatchmakerView } from './components/MatchmakerView';
+import { CompanyConfigView } from './components/CompanyConfigView';
 import { Bell, ChevronDown } from 'lucide-react';
 
 function App() {
+  const [currentView, setCurrentView] = useState<'matchmaker' | 'company'>('matchmaker');
+
   return (
     <div className="flex bg-[#F4F7FB] min-h-screen font-sans selection:bg-blue-100 selection:text-blue-900 bg-mesh">
       {/* Sidebar with dark theme */}
-      <Sidebar />
+      <Sidebar currentView={currentView} onViewChange={setCurrentView} />
 
       {/* Main Content Area */}
       <main className="flex-1 ml-[280px] p-10 max-w-[1600px] transition-all duration-300">
         <header className="flex justify-between items-start mb-12">
           <div className="space-y-1">
             <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">
-              Strategic Matchmaker
+              {currentView === 'matchmaker' ? 'Strategic Matchmaker' : 'Company profile'}
             </h1>
             <p className="text-slate-500 font-medium text-lg">
-              AI-powered synergy analysis for targeted client acquisition.
+              {currentView === 'matchmaker'
+                ? 'AI-powered synergy analysis for targeted client acquisition.'
+                : 'Configure your company signals to improve matching accuracy.'}
             </p>
           </div>
 
@@ -49,6 +55,7 @@ function App() {
 
         <AnimatePresence mode="wait">
           <motion.div
+            key={currentView}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -59,7 +66,7 @@ function App() {
             }}
             className="w-full"
           >
-            <MatchmakerView />
+            {currentView === 'matchmaker' ? <MatchmakerView /> : <CompanyConfigView />}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -68,4 +75,3 @@ function App() {
 }
 
 export default App;
-
