@@ -24,7 +24,7 @@ class OrchestratorService:
     async def run_pipeline(self, urls: List[str]) -> List[Opportunity]:
         # Reset normalization cache for a new run
         normalization_service.clear_cache()
-        
+
         # Pre-filter URLs by domain to avoid concurrent tasks for the same company in the same batch
         unique_batch_urls = []
         seen_batch_domains = set()
@@ -41,38 +41,38 @@ class OrchestratorService:
 
         tasks = [self.process_single_url(url) for url in unique_batch_urls]
         results = await asyncio.gather(*tasks)
-        
+
         # Filter out None results
         processed_results = [r for r in results if r is not None]
-        
+
         # Normalization & Deduplication
         final_opportunities = []
         for opp in processed_results:
             # 1. Normalize name and tech stack (Rule-based)
             normalized_opp = normalization_service.normalize_opportunity(opp)
-            
+
             # 2. Advanced Deduplication (Domain + Fuzzy Name)
             if not normalization_service.is_duplicate(normalized_opp.company_name, normalized_opp.url):
                 # 3. Optional: LLM-based Tech Stack Refinement
                 # Only if the rule-based normalization left us with generic or too few tags
                 if len(normalized_opp.tech_stack) < 3 or any(len(t) < 3 for t in normalized_opp.tech_stack):
-                   await self._refine_tech_stack_with_llm(normalized_opp)
-                
+                    await self._refine_tech_stack_with_llm(normalized_opp)
+
                 final_opportunities.append(normalized_opp)
             else:
                 print(f"Skipping duplicate opportunity (Domain/Fuzzy): {normalized_opp.company_name}")
-        
+
         # 4. Save to Database
         if final_opportunities:
             await self._save_to_db(final_opportunities)
-            
+
         return final_opportunities
 
     async def _save_to_db(self, opportunities: List[Opportunity]):
         """Persists the opportunities and their signals to Neon."""
         async with AsyncSessionLocal() as session:
             # We don't use begin() here if we want to manage it manually or just use session.add
-            # But async session context usually handles it well. 
+            # But async session context usually handles it well.
             for opp in opportunities:
                 # Check if URL already exists in DB to prevent duplicates safely
                 stmt = select(OpportunityModel).where(OpportunityModel.url == opp.url)
@@ -89,20 +89,16 @@ class OrchestratorService:
                     score=opp.score,
                     classification=opp.classification,
                     tech_stack=opp.tech_stack,
-                    summary=opp.summary
+                    summary=opp.summary,
                 )
-                
+
                 # Add Signals
                 for s in opp.signals:
-                    db_signal = TechSignalModel(
-                        category=s.category,
-                        description=s.description,
-                        urgency=s.urgency
-                    )
+                    db_signal = TechSignalModel(category=s.category, description=s.description, urgency=s.urgency)
                     db_opp.signals.append(db_signal)
-                
+
                 session.add(db_opp)
-            
+
             await session.commit()
             print(f"Successfully saved {len(opportunities)} opportunities to Neon.")
 
@@ -110,7 +106,7 @@ class OrchestratorService:
         """Uses LLM to clean up and canonicalize tech stack if rules weren't enough."""
         raw_tech = ", ".join(opportunity.tech_stack)
         prompt = TECH_NORMALIZATION_PROMPT.format(tech_terms=raw_tech)
-        
+
         llm_response = await llm_service.process_content("You are a tech stack expert.", prompt)
         if llm_response and "Error" not in llm_response:
             # Parse comma separated list
@@ -136,16 +132,16 @@ class OrchestratorService:
             cleaned_json = llm_response.strip()
             if cleaned_json.startswith("```json"):
                 cleaned_json = cleaned_json[7:-3].strip()
-            
+
             data = json.loads(cleaned_json)
-            
+
             # Simple Scoring Heuristic
             base_score = 0
             signals_data = data.get("signals", [])
             signals = [TechSignal(**s) for s in signals_data]
             for s in signals:
                 base_score += s.urgency * 2
-            
+
             classification = "Low agency fit"
             if base_score > 15:
                 classification = "High probability outsourcing candidate"
@@ -160,10 +156,11 @@ class OrchestratorService:
                 classification=classification,
                 signals=signals,
                 tech_stack=data.get("tech_stack", []),
-                summary=data.get("summary", "No summary available")
+                summary=data.get("summary", "No summary available"),
             )
         except Exception as e:
             print(f"Error parsing LLM response for {url}: {e}")
             return None
+
 
 orchestrator = OrchestratorService()

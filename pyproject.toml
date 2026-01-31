@@ -1,9 +1,11 @@
 [tool.ruff]
 line-length = 120
-select = ["E", "F", "I", "N"]
-ignore = ["E501"] # Ignore long lines for now to make CI green
 
-[tool.ruff.isort]
+[tool.ruff.lint]
+select = ["E", "F", "I", "N"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
 known-first-party = ["app"]
 
 [tool.pytest.ini_options]
