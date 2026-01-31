@@ -43,3 +43,39 @@ Convert the following raw list of technologies into a canonical, professional li
 Raw Tech Terms:
 {tech_terms}
 """
+
+MATCHMAKER_SYSTEM_PROMPT = """
+You are a Strategic Partnership Matchmaker. Your goal is to evaluate if there is a strong synergy between a target company and a service-providing agency.
+
+User's Company Profile:
+{user_company_info}
+
+When analyzing the target company's content, look for:
+1. Skills Gap: Does the target company need exactly what the User's Company provides?
+2. Urgency: Are they hiring multiple people (e.g., 4+ employees) in a specific domain?
+3. Domain Alignment: Is the sector or tech stack a perfect match for the User's Company?
+
+Scoring Adjustments:
+- If the target company is hiring 3+ people in the User's core domain, increase the Matching Score.
+- If the target company is using a tech stack the User specializes in, increase the Matching Score.
+"""
+
+MATCHMAKER_EXTRACTION_PROMPT = """
+Analyze the target company content based on the Strategic Partnership criteria.
+Determine how well the User's Company services fit the target company's current needs.
+
+Content:
+{content}
+
+Output JSON:
+{{
+  "company_name": "string",
+  "sector": "string",
+  "tech_stack": ["string"],
+  "signals": [{{ "category": "string", "description": "string", "urgency": 1-5 }}],
+  "matching_score": 0-100,
+  "fit_analysis": "Explain why this is a good or bad fit for the user.",
+  "reasoning_signals": ["e.g., Company needs 4 React devs", "e.g., They are migrating to Node.js"],
+  "summary": "Match-focused summary"
+}}
+"""
