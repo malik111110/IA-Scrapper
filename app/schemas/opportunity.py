@@ -29,7 +29,9 @@ class Opportunity(BaseModel):
 
 
 class OrchestratorConfig(BaseModel):
-    urls: List[str]
+    urls: Optional[List[str]] = None
+    source_url: Optional[str] = None
+    css_selector: Optional[str] = None
     instruction: Optional[str] = None
 
 

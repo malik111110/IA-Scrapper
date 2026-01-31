@@ -1,13 +1,19 @@
-# B2B Opportunity Radar (MVP) Tech Sector 
+# B2B Opportunity Radar (MVP) Tech Sector
 
 Detect where companies are spending or about to spend money on tech so agencies can pitch at the right moment.
 This tool scrapes public signals (job boards, blogs, press releases) to identify intent, scoring opportunities based on hiring velocity, funding, and tech stack changes.
 
 ## 🚀 Features
-- **Scraper Layer**: Async crawling with `Crawl4AI` and `Playwright`.
-- **Intent Extraction**: OpenAI-powered analysis of job posts, technical blogs, and funding news.
-- **Opportunity Scoring**: Weighted scoring model (Hiring + Funding + Stack Mismatch).
-- **API**: FastAPI backend for managing scrapes and viewing results.
+- **Intelligent Discovery**: Automatically discover company career pages and job posts from index pages.
+- **Intent Extraction**: OpenAI-powered deep analysis of tech roadmaps, migrations, and hiring patterns.
+- **Weighted Scoring**: Heuristic model that calculates "Outsourcing Probability" based on 5 key dimensions.
+- **Premium Dashboard**: Real-time visualization of B2B opportunities with sorting and classification.
+
+## 📈 Agency Use Case
+As a B2B Agency (Software Development, Cloud Migration, or Security), you can use this tool to:
+1.  **Monitor Target Sectors**: Feed the radar URLs from your preferred niche (e.g., Fintech startups).
+2.  **Filter High-Probability Leads**: Focus your sales team only on "High probability outsourcing candidates".
+3.  **Personalized Outreaches**: Use the "Summary" and "Tech Stack" data to craft hyper-personalized emails (e.g., *"Noticed you're scaling your Kubernetes team and migrating to Java 21..."*).
 
 ## 🛠️ Setup
 

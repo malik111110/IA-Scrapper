@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B2B Opportunity Radar | IA-Scrapper</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="bg-blur"></div>
+    <div class="container">
+        <header>
+            <h1>B2B Opportunity Radar</h1>
+            <p class="subtitle">Detecting high-probability tech outsourcing signals in real-time</p>
+        </header>
+
+        <div class="controls">
+            <div class="stats">
+                <div class="stat-item">
+                    <span id="total-count" class="stat-value">0</span>
+                    <span class="stat-label">OPPORTUNITIES</span>
+                </div>
+                <div class="stat-item">
+                    <span id="high-prob-count" class="stat-value">0</span>
+                    <span class="stat-label">HIGH PROBABILITY</span>
+                </div>
+            </div>
+            <button class="btn-refresh" onclick="fetchOpportunities()">Refresh Feed</button>
+        </div>
+
+        <div id="dashboard" class="dashboard-grid">
+            <div class="loading pulse">Scanning the tech ecosystem...</div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchOpportunities() {
+            const dashboard = document.getElementById('dashboard');
+            dashboard.innerHTML = '<div class="loading pulse">Updating Radar...</div>';
+
+            try {
+                const response = await fetch('/api/v1/opportunities/?limit=20');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const data = await response.json();
+
+                if (data && data.opportunities) {
+                    renderOpportunities(data.opportunities);
+                    updateStats(data);
+                } else {
+                    throw new Error('Malformed data received from server');
+                }
+            } catch (error) {
+                console.error('Error fetching opportunities:', error);
+                dashboard.innerHTML = `<div class="loading">Error: ${error.message}. Please check if the backend is running.</div>`;
+            }
+        }
+
+        function renderOpportunities(opportunities) {
+            const dashboard = document.getElementById('dashboard');
+
+            if (!opportunities || opportunities.length === 0) {
+                dashboard.innerHTML = '<div class="loading">No opportunities detected yet. Start the scraper!</div>';
+                return;
+            }
+
+            dashboard.innerHTML = opportunities.map(opp => {
+                const statusClass = opp.classification.includes('High') ? 'high' :
+                    opp.classification.includes('Mid') ? 'mid' : 'low';
+
+                return `
+                    <div class="opportunity-card" onclick="window.open('${opp.url}', '_blank')">
+                        <div class="card-header">
+                            <span class="company-name">${opp.company_name}</span>
+                            <span class="score-badge">${opp.score.toFixed(1)}</span>
+                        </div>
+                        <div class="sector">${opp.sector || 'General Tech'}</div>
+                        <p class="summary">${opp.summary}</p>
+                        <div class="tech-stack">
+                            ${opp.tech_stack.slice(0, 5).map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
+                            ${opp.tech_stack.length > 5 ? `<span class="tech-tag">+${opp.tech_stack.length - 5}</span>` : ''}
+                        </div>
+                        <div class="classification">
+                            <span class="status-dot ${statusClass}"></span>
+                            ${opp.classification}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats(data) {
+            document.getElementById('total-count').innerText = data.total;
+            const highProb = data.opportunities.filter(o => o.classification.includes('High')).length;
+            document.getElementById('high-prob-count').innerText = highProb;
+        }
+
+        // Initial fetch
+        fetchOpportunities();
+    </script>
+</body>
+
+</html>
