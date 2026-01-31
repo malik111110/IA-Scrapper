@@ -19,15 +19,16 @@ def test_company_normalization():
 
 
 def test_tech_stack_normalization():
-    tech_stack = ["react.js", "NextJS", "aws", "postgres", "Docker", "python", "software development"]
-    expected = ["AWS", "Docker", "Next.js", "PostgreSQL", "Python", "React"]
+    tech_stack = ["react.js", "NextJS", "aws", "postgres", "Docker", "python", "software development", "FastAPI", "Rest API"]
+    expected = ["AWS", "Docker", "FastAPI", "Next.js", "PostgreSQL", "Python", "React"]
 
     result = normalization_service.normalize_tech_stack(tech_stack)
     print(f"Input: {tech_stack}")
     print(f"Result: {result}")
     for item in expected:
         assert item in result
-    assert "Software development" not in result  # Should be filtered or titled if not generic
+    assert "Software development" not in result
+    assert "Rest API" not in result
 
 
 def test_domain_extraction():

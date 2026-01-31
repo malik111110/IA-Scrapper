@@ -73,6 +73,7 @@ class OrchestratorService:
         async with AsyncSessionLocal() as session:
             # We don't use begin() here if we want to manage it manually or just use session.add
             # But async session context usually handles it well.
+            saved_count = 0
             for opp in opportunities:
                 # Check if URL already exists in DB to prevent duplicates safely
                 stmt = select(OpportunityModel).where(OpportunityModel.url == opp.url)
@@ -98,9 +99,10 @@ class OrchestratorService:
                     db_opp.signals.append(db_signal)
 
                 session.add(db_opp)
+                saved_count += 1
 
             await session.commit()
-            print(f"Successfully saved {len(opportunities)} opportunities to Neon.")
+            print(f"Successfully saved {saved_count} opportunities to Neon.")
 
     async def _refine_tech_stack_with_llm(self, opportunity: Opportunity):
         """Uses LLM to clean up and canonicalize tech stack if rules weren't enough."""
