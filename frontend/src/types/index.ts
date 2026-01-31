@@ -26,3 +26,14 @@ export interface CompanyProfile {
 
 export type CompanyProfileCreate = Omit<CompanyProfile, 'id' | 'created_at' | 'updated_at'>;
 export type CompanyProfileUpdate = Partial<CompanyProfileCreate>;
+
+export interface OnboardingMessage {
+    message: string;
+    history: { role: 'user' | 'assistant', content: string }[];
+}
+
+export interface OnboardingResponse {
+    agent_response: string;
+    extracted_profile: Partial<CompanyProfile> | null;
+    status: 'ongoing' | 'complete';
+}

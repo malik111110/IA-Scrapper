@@ -30,29 +30,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) =
                 <p className="px-4 mb-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Platform</p>
 
                 <button
-                    onClick={() => onViewChange('matchmaker')}
-                    className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all group ${currentView === 'matchmaker'
-                            ? 'bg-blue-600/10 text-white shadow-sm ring-1 ring-blue-500/20'
-                            : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-                        }`}
-                >
-                    <Target size={20} className={currentView === 'matchmaker' ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'} />
-                    <span className="flex-1 text-left">Matchmaker</span>
-                    {currentView === 'matchmaker' && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
-                    )}
-                </button>
-
-                <button
                     onClick={() => onViewChange('company')}
                     className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all group ${currentView === 'company'
-                            ? 'bg-blue-600/10 text-white shadow-sm ring-1 ring-blue-500/20'
-                            : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                        ? 'bg-blue-600/10 text-white shadow-sm ring-1 ring-blue-500/20'
+                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
                         }`}
                 >
                     <Building2 size={20} className={currentView === 'company' ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'} />
                     <span className="flex-1 text-left">Company profile</span>
                     {currentView === 'company' && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+                    )}
+                </button>
+
+                <button
+                    onClick={() => onViewChange('matchmaker')}
+                    className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all group ${currentView === 'matchmaker'
+                        ? 'bg-blue-600/10 text-white shadow-sm ring-1 ring-blue-500/20'
+                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                        }`}
+                >
+                    <Target size={20} className={currentView === 'matchmaker' ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'} />
+                    <span className="flex-1 text-left">Matchmaker</span>
+                    {currentView === 'matchmaker' && (
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
                     )}
                 </button>

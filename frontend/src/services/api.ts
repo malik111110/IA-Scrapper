@@ -1,5 +1,12 @@
 import axios from 'axios';
-import type { MatchResponse, CompanyProfile, CompanyProfileCreate, CompanyProfileUpdate } from '../types';
+import type {
+    MatchResponse,
+    CompanyProfile,
+    CompanyProfileCreate,
+    CompanyProfileUpdate,
+    OnboardingMessage,
+    OnboardingResponse
+} from '../types';
 
 const API_BASE_URL = '/api/v1';
 
@@ -10,6 +17,11 @@ export const api = {
             search_query: query,
             platforms: ['indeed', 'openclassrooms']
         });
+        return response.data;
+    },
+
+    async onboard(data: OnboardingMessage): Promise<OnboardingResponse> {
+        const response = await axios.post(`${API_BASE_URL}/company/onboard`, data);
         return response.data;
     },
 

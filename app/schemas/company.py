@@ -35,3 +35,12 @@ class CompanyProfile(CompanyProfileBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class OnboardingMessage(BaseModel):
+    message: str
+    history: List[dict] = []
+
+class OnboardingResponse(BaseModel):
+    agent_response: str
+    extracted_profile: Optional[CompanyProfileUpdate] = None
+    status: str = "ongoing" # or "complete"

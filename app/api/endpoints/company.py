@@ -5,7 +5,14 @@ from sqlalchemy import select
 
 from app.core.database import get_db
 from app.models.company import CompanyProfile as CompanyProfileModel
-from app.schemas.company import CompanyProfile, CompanyProfileCreate, CompanyProfileUpdate
+from app.schemas.company import (
+    CompanyProfile, 
+    CompanyProfileCreate, 
+    CompanyProfileUpdate,
+    OnboardingMessage,
+    OnboardingResponse
+)
+from app.services.company_service import company_service
 
 router = APIRouter()
 
@@ -92,3 +99,38 @@ async def delete_company_profile(
     await db.delete(db_obj)
     await db.commit()
     return db_obj
+
+@router.post("/onboard", response_model=OnboardingResponse)
+async def onboard_company(
+    *,
+    db: AsyncSession = Depends(get_db),
+    onboard_in: OnboardingMessage,
+) -> Any:
+    """
+    Handles conversational onboarding.
+    """
+    agent_msg, extracted = await company_service.onboard_chat(
+        db, onboard_in.message, onboard_in.history
+    )
+    
+    if extracted:
+        profile = await company_service.get_default_profile(db)
+        if not profile:
+            if extracted.get("name"):
+                profile = CompanyProfileModel(**extracted)
+                db.add(profile)
+                await db.commit()
+                await db.refresh(profile)
+        else:
+            for field, value in extracted.items():
+                if value is not None:
+                    setattr(profile, field, value)
+            db.add(profile)
+            await db.commit()
+            await db.refresh(profile)
+
+    return {
+        "agent_response": agent_msg,
+        "extracted_profile": extracted,
+        "status": "ongoing"
+    }

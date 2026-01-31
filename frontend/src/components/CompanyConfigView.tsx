@@ -1,19 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Save, Plus, X, Building2, Mail, Globe, Briefcase, Ruler, Lightbulb, Users, Rocket } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, User, Sparkles, BrainCircuit, Rocket, Building2, ExternalLink, Mail, Briefcase } from 'lucide-react';
 import { api } from '../services/api';
-import type { CompanyProfile, CompanyProfileUpdate } from '../types';
+import type { CompanyProfile } from '../types';
+
+interface Message {
+    role: 'user' | 'assistant';
+    content: string;
+}
 
 export const CompanyConfigView: React.FC = () => {
+    const [messages, setMessages] = useState<Message[]>([
+        {
+            role: 'assistant',
+            content: "Welcome to the Strategic Command. I am your Digital Onboarding Agent. Together, we will calibrate your company's digital twin to ensure perfect alignment with market opportunities. \n\nWhat is the name of your organization, and what vision do you carry?"
+        }
+    ]);
+    const [inputValue, setInputValue] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const [profile, setProfile] = useState<CompanyProfile | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Form states for arrays
-    const [newService, setNewService] = useState('');
-    const [newEquipment, setNewEquipment] = useState('');
-    const [newSpecialty, setNewSpecialty] = useState('');
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
     useEffect(() => {
         fetchProfile();
@@ -24,342 +38,184 @@ export const CompanyConfigView: React.FC = () => {
             const profiles = await api.getCompanyProfiles();
             if (profiles.length > 0) {
                 setProfile(profiles[0]);
-            } else {
-                // Initialize empty profile if none exists
-                setProfile({
-                    id: 0,
-                    name: '',
-                    description: '',
-                    services: [],
-                    equipment: [],
-                    experience_years: 0,
-                    specialties: [],
-                    mission: '',
-                    target_audience: '',
-                    website: '',
-                    contact_email: '',
-                    created_at: '',
-                    updated_at: ''
-                });
             }
-        } catch (error) {
-            console.error('Failed to fetch profile', error);
-            setMessage({ type: 'error', text: 'Failed to load company profile.' });
-        } finally {
-            setLoading(false);
+        } catch (err) {
+            console.error("Failed to fetch profile", err);
         }
     };
 
-    const handleUpdateField = (field: keyof CompanyProfile, value: any) => {
-        if (!profile) return;
-        setProfile({ ...profile, [field]: value });
-    };
+    const handleSendMessage = async () => {
+        if (!inputValue.trim() || isLoading) return;
 
-    const handleAddItem = (field: 'services' | 'equipment' | 'specialties', value: string, setter: (v: string) => void) => {
-        if (!profile || !value.trim()) return;
-        if (profile[field].includes(value.trim())) return;
-        setProfile({ ...profile, [field]: [...profile[field], value.trim()] });
-        setter('');
-    };
+        const userMsg = inputValue;
+        setInputValue('');
+        setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+        setIsLoading(true);
 
-    const handleRemoveItem = (field: 'services' | 'equipment' | 'specialties', index: number) => {
-        if (!profile) return;
-        const newList = [...profile[field]];
-        newList.splice(index, 1);
-        setProfile({ ...profile, [field]: newList });
-    };
-
-    const handleSave = async () => {
-        if (!profile) return;
-        setSaving(true);
-        setMessage(null);
         try {
-            const updateData: CompanyProfileUpdate = { ...profile };
-            if (profile.id === 0) {
-                // Create
-                const newProfile = await api.createCompanyProfile(updateData as any);
-                setProfile(newProfile);
-            } else {
-                // Update
-                const updated = await api.updateCompanyProfile(profile.id, updateData);
-                setProfile(updated);
+            const history = messages.map(m => ({ role: m.role, content: m.content }));
+            const response = await api.onboard({ message: userMsg, history });
+
+            setMessages(prev => [...prev, { role: 'assistant', content: response.agent_response }]);
+            if (response.extracted_profile) {
+                // Background refresh profile
+                fetchProfile();
             }
-            setMessage({ type: 'success', text: 'Profile saved successfully!' });
-            setTimeout(() => setMessage(null), 3000);
-        } catch (error) {
-            console.error('Failed to save profile', error);
-            setMessage({ type: 'error', text: 'Failed to save profile. Please check your inputs.' });
+        } catch (err) {
+            setMessages(prev => [...prev, { role: 'assistant', content: "I encountered a synchronization error. Please try again." }]);
         } finally {
-            setSaving(false);
+            setIsLoading(false);
         }
     };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-        );
-    }
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8 pb-20">
-            <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">Company Configuration</h2>
-                    <p className="text-slate-500 font-medium">Define your core identity to power the matching engine.</p>
+        <div className="max-w-6xl mx-auto h-[calc(100vh-200px)] flex gap-8">
+            {/* Left Column: Chat Interface */}
+            <div className="flex-1 flex flex-col premium-card bg-white overflow-hidden border-none shadow-2xl shadow-blue-500/5">
+                <div className="p-6 bg-slate-900 border-b border-white/10 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <BrainCircuit size={20} className="text-white" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-black text-white tracking-tight">Onboarding Agent</h3>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active System Calibration</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="btn-premium btn-premium-primary px-8 py-3 flex items-center gap-2"
-                >
-                    {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={18} />}
-                    {saving ? 'Saving...' : 'Save Configuration'}
-                </button>
+
+                <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-elegant">
+                    <AnimatePresence>
+                        {messages.map((msg, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                            >
+                                <div className={`flex gap-4 max-w-[80%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                                    <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${msg.role === 'user' ? 'bg-slate-900 shadow-sm' : 'bg-blue-600 shadow-lg shadow-blue-500/20'
+                                        }`}>
+                                        {msg.role === 'user' ? <User size={16} className="text-white" /> : <Sparkles size={16} className="text-white" />}
+                                    </div>
+                                    <div className={`px-5 py-4 rounded-2xl text-sm font-semibold leading-relaxed ${msg.role === 'user'
+                                        ? 'bg-slate-900 text-white shadow-xl'
+                                        : 'bg-slate-50 text-slate-700 border border-slate-100'
+                                        }`}>
+                                        {msg.content.split('\n').map((line, j) => (
+                                            <p key={j} className={j > 0 ? 'mt-3' : ''}>{line}</p>
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                    {isLoading && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                            <div className="flex gap-4 items-center px-5 py-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <div className="flex gap-1.5">
+                                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                </div>
+                                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Processing</span>
+                            </div>
+                        </motion.div>
+                    )}
+                    <div ref={messagesEndRef} />
+                </div>
+
+                <div className="p-6 bg-slate-50/50 border-t border-slate-100">
+                    <div className="relative group">
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                            placeholder="Type your response to the agent..."
+                            className="w-full bg-white border border-slate-200 rounded-2xl py-5 pl-6 pr-20 text-sm font-bold text-slate-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all shadow-sm"
+                        />
+                        <button
+                            onClick={handleSendMessage}
+                            disabled={!inputValue.trim() || isLoading}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white p-3 rounded-xl hover:bg-black transition-all disabled:opacity-30"
+                        >
+                            <Send size={20} />
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            {message && (
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`p-4 rounded-xl font-bold flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
-                        }`}
-                >
-                    <Info size={18} />
-                    {message.text}
-                </motion.div>
-            )}
-
-            <div className="grid lg:grid-cols-2 gap-8">
-                {/* Left Column: Basic Info */}
-                <div className="space-y-8">
-                    <section className="premium-card p-8 bg-white space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                                <Building2 size={20} />
-                            </div>
-                            <h3 className="text-lg font-black text-slate-900">General Identity</h3>
+            {/* Right Column: Live Profile Preview (Semantic Data Normalization visualization) */}
+            <div className="w-[380px] space-y-6">
+                <div className="premium-card p-6 bg-slate-900 text-white border-none shadow-xl">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-white/5 rounded-lg border border-white/10">
+                            <Rocket size={20} className="text-blue-400" />
                         </div>
+                        <div>
+                            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Live Agent Mapping</h4>
+                            <p className="text-xs font-bold text-slate-500">Semantic Data Normalization Active</p>
+                        </div>
+                    </div>
 
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Name</label>
-                                <input
-                                    type="text"
-                                    value={profile?.name || ''}
-                                    onChange={(e) => handleUpdateField('name', e.target.value)}
-                                    placeholder="e.g. Acme Innovations"
-                                    className="input-premium"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Website</label>
-                                    <div className="relative">
-                                        <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                        <input
-                                            type="text"
-                                            value={profile?.website || ''}
-                                            onChange={(e) => handleUpdateField('website', e.target.value)}
-                                            placeholder="https://acme.com"
-                                            className="input-premium pl-11"
-                                        />
+                    <div className="space-y-6">
+                        {profile ? (
+                            <>
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-blue-500">Identity</label>
+                                        {profile.website && <ExternalLink size={12} className="text-slate-500" />}
+                                    </div>
+                                    <p className="text-xl font-black truncate">{profile.name}</p>
+                                    <div className="flex items-center gap-2 mt-2 opacity-60">
+                                        <Mail size={12} />
+                                        <span className="text-[10px] font-bold">{profile.contact_email || 'Not configured'}</span>
                                     </div>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Work Email</label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                        <input
-                                            type="email"
-                                            value={profile?.contact_email || ''}
-                                            onChange={(e) => handleUpdateField('contact_email', e.target.value)}
-                                            placeholder="contact@acme.com"
-                                            className="input-premium pl-11"
-                                        />
+
+                                <div className="pt-6 border-t border-white/5">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 block mb-3">Core Expertise (Mapped)</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {profile.services.length > 0 ? profile.services.map((s, i) => (
+                                            <span key={i} className="px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold text-slate-300">
+                                                {s}
+                                            </span>
+                                        )) : <span className="text-[10px] text-slate-600 font-bold">Awaiting extraction...</span>}
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Elevator Pitch / Description</label>
-                                <textarea
-                                    value={profile?.description || ''}
-                                    onChange={(e) => handleUpdateField('description', e.target.value)}
-                                    placeholder="Describe what you do in one paragraph..."
-                                    className="input-premium h-32 resize-none"
-                                />
+                                <div className="pt-6 border-t border-white/5">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-blue-500 block mb-3">Vision Engine</label>
+                                    <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                                        <p className="text-[11px] font-medium leading-relaxed text-slate-400 italic">
+                                            "{profile.description || 'Describe your agency to initialize the vision engine...'}"
+                                        </p>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="py-20 text-center space-y-4">
+                                <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mx-auto border border-white/10 border-dashed">
+                                    <Building2 size={24} className="text-slate-700" />
+                                </div>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Profile Offline</p>
                             </div>
-                        </div>
-                    </section>
-
-                    <section className="premium-card p-8 bg-white space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
-                                <Rocket size={20} />
-                            </div>
-                            <h3 className="text-lg font-black text-slate-900">Vision & Market</h3>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Mission</label>
-                                <textarea
-                                    value={profile?.mission || ''}
-                                    onChange={(e) => handleUpdateField('mission', e.target.value)}
-                                    placeholder="What drives your company forward?"
-                                    className="input-premium h-24 resize-none"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Audience</label>
-                                <input
-                                    type="text"
-                                    value={profile?.target_audience || ''}
-                                    onChange={(e) => handleUpdateField('target_audience', e.target.value)}
-                                    placeholder="e.g. Mid-sized FinTech firms, Series A Startups"
-                                    className="input-premium"
-                                />
-                            </div>
-                        </div>
-                    </section>
+                        )}
+                    </div>
                 </div>
 
-                {/* Right Column: Dynamic Lists */}
-                <div className="space-y-8">
-                    {/* Services Tag Input */}
-                    <section className="premium-card p-8 bg-white space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-                                <Briefcase size={20} />
-                            </div>
-                            <h3 className="text-lg font-black text-slate-900">Services Offered</h3>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={newService}
-                                    onChange={(e) => setNewService(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleAddItem('services', newService, setNewService)}
-                                    placeholder="e.g. Cloud Migration"
-                                    className="input-premium"
-                                />
-                                <button
-                                    onClick={() => handleAddItem('services', newService, setNewService)}
-                                    className="p-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors"
-                                >
-                                    <Plus size={20} />
-                                </button>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 min-h-[40px]">
-                                {profile?.services.map((item, i) => (
-                                    <span key={i} className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-indigo-100 group">
-                                        {item}
-                                        <button onClick={() => handleRemoveItem('services', i)} className="hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <X size={14} />
-                                        </button>
-                                    </span>
-                                ))}
-                                {profile?.services.length === 0 && <p className="text-xs text-slate-400 font-medium italic">No services added yet.</p>}
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Equipment/Stack Tag Input */}
-                    <section className="premium-card p-8 bg-white space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
-                                <Ruler size={20} />
-                            </div>
-                            <h3 className="text-lg font-black text-slate-900">Equipment & Tech Stack</h3>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={newEquipment}
-                                    onChange={(e) => setNewEquipment(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleAddItem('equipment', newEquipment, setNewEquipment)}
-                                    placeholder="e.g. AWS Multi-Region, Drone Fleet"
-                                    className="input-premium"
-                                />
-                                <button
-                                    onClick={() => handleAddItem('equipment', newEquipment, setNewEquipment)}
-                                    className="p-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors"
-                                >
-                                    <Plus size={20} />
-                                </button>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 min-h-[40px]">
-                                {profile?.equipment.map((item, i) => (
-                                    <span key={i} className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 text-xs font-bold rounded-lg border border-purple-100 group">
-                                        {item}
-                                        <button onClick={() => handleRemoveItem('equipment', i)} className="hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <X size={14} />
-                                        </button>
-                                    </span>
-                                ))}
-                                {profile?.equipment.length === 0 && <p className="text-xs text-slate-400 font-medium italic">No equipment listed.</p>}
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Specialties Tag Input */}
-                    <section className="premium-card p-8 bg-white space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
-                                <Lightbulb size={20} />
-                            </div>
-                            <h3 className="text-lg font-black text-slate-900">Unique Specialties</h3>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={newSpecialty}
-                                    onChange={(e) => setNewSpecialty(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleAddItem('specialties', newSpecialty, setNewSpecialty)}
-                                    placeholder="e.g. High-Load Backend"
-                                    className="input-premium"
-                                />
-                                <button
-                                    onClick={() => handleAddItem('specialties', newSpecialty, setNewSpecialty)}
-                                    className="p-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors"
-                                >
-                                    <Plus size={20} />
-                                </button>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 min-h-[40px]">
-                                {profile?.specialties.map((item, i) => (
-                                    <span key={i} className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-100 group">
-                                        {item}
-                                        <button onClick={() => handleRemoveItem('specialties', i)} className="hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <X size={14} />
-                                        </button>
-                                    </span>
-                                ))}
-                                {profile?.specialties.length === 0 && <p className="text-xs text-slate-400 font-medium italic">Add special skills.</p>}
-                            </div>
-                        </div>
-                    </section>
+                <div className="premium-card p-6 bg-white border-2 border-dashed border-slate-100 flex flex-col items-center justify-center text-center">
+                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                        <Briefcase size={20} className="text-blue-600" />
+                    </div>
+                    <h5 className="text-sm font-black text-slate-900 tracking-tight">Need Manual Override?</h5>
+                    <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Coming in Enterprise v2.0</p>
                 </div>
             </div>
         </div>
     );
 };
-
-// Internal Info icon mapping for the alert
-const Info = ({ size, className }: { size: number, className?: string }) => (
-    <div className={className}>
-        <Users size={size} />
-    </div>
-);
