@@ -1,7 +1,10 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
+
 from app.core.database import Base
+
 
 class TechSignalModel(Base):
     __tablename__ = "tech_signals"

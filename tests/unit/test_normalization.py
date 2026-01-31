@@ -1,5 +1,6 @@
 from app.services.normalization_service import normalization_service
 
+
 def test_company_normalization():
     test_cases = [
         ("Google Inc.", "Google"),

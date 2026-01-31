@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
 from typing import List
-from app.services.orchestrator_service import orchestrator
+
+from fastapi import APIRouter, HTTPException
+
 from app.schemas.opportunity import Opportunity, OrchestratorConfig
+from app.services.orchestrator_service import orchestrator
 
 router = APIRouter()
 

@@ -1,6 +1,7 @@
 import asyncio
-from app.core.database import engine, Base
-from app.models.opportunity import OpportunityModel, TechSignalModel
+
+from app.core.database import Base, engine
+
 
 async def init_db():
     async with engine.begin() as conn:

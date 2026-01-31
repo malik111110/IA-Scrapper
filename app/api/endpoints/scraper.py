@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+
 from app.schemas.scrape import ScrapeRequest, ScrapeResponse
 from app.services.crawler_service import CrawlerService
 from app.services.llm_service import llm_service

@@ -1,5 +1,6 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
+
 from app.core.config import settings
 
 # Neon works better with asyncpg for FastAPI
@@ -8,7 +9,7 @@ if DATABASE_URL:
     # Cleanup URL for asyncpg
     if "sslmode=" in DATABASE_URL:
         # asyncpg doesn't like sslmode in the connection string
-        from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+        from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
         u = urlparse(DATABASE_URL)
         qs = parse_qs(u.query)
         qs.pop('sslmode', None)

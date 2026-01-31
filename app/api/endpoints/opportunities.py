@@ -1,11 +1,13 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from typing import List, Optional
+from sqlalchemy.orm import selectinload
+
 from app.core.database import get_db
 from app.models.opportunity import OpportunityModel
 from app.schemas.opportunity import Opportunity, OpportunityListResponse
-from sqlalchemy.orm import selectinload
 
 router = APIRouter()
 

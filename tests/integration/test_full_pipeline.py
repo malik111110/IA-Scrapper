@@ -1,5 +1,7 @@
 import asyncio
+
 from app.services.orchestrator_service import orchestrator
+
 
 async def test_run():
     # Real test URLs logic
@@ -12,7 +14,7 @@ async def test_run():
     print(f"🚀 Starting Full Pipeline for {len(urls)} URLs...")
     opportunities = await orchestrator.run_pipeline(urls)
     
-    print(f"\n✅ Pipeline Finished!")
+    print("\n✅ Pipeline Finished!")
     print(f"Total Unique Opportunities: {len(opportunities)}")
     
     for opp in opportunities:

@@ -1,5 +1,7 @@
 from openai import AsyncOpenAI
+
 from app.core.config import settings
+
 
 class LLMService:
     def __init__(self):

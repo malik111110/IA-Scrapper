@@ -1,14 +1,21 @@
 import asyncio
 import json
 from typing import List
+
+from sqlalchemy import select
+
+from app.core.database import AsyncSessionLocal
+from app.core.prompts import (
+    SYSTEM_PROMPT,
+    TECH_NORMALIZATION_PROMPT,
+    USER_EXTRACTION_PROMPT,
+)
+from app.models.opportunity import OpportunityModel, TechSignalModel
+from app.schemas.opportunity import Opportunity, TechSignal
 from app.services.crawler_service import CrawlerService
 from app.services.llm_service import llm_service
-from app.schemas.opportunity import Opportunity, TechSignal
-from app.core.prompts import SYSTEM_PROMPT, USER_EXTRACTION_PROMPT, TECH_NORMALIZATION_PROMPT
 from app.services.normalization_service import normalization_service
-from app.core.database import AsyncSessionLocal
-from app.models.opportunity import OpportunityModel, TechSignalModel
-from sqlalchemy import select
+
 
 class OrchestratorService:
     def __init__(self):

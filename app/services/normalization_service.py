@@ -1,8 +1,11 @@
 import re
+from typing import List, Optional, Set
+
 import tldextract
-from typing import List, Set, Optional
 from rapidfuzz import fuzz, process
+
 from app.schemas.opportunity import Opportunity
+
 
 class NormalizationService:
     # Compile regex patterns for common legal suffixes
