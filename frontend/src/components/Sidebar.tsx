@@ -1,12 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, Target, Settings, HelpCircle, Zap, ShieldCheck } from 'lucide-react';
+import { Target, Settings, HelpCircle, Zap, ShieldCheck } from 'lucide-react';
 
-interface SidebarProps {
-    activeView: 'opportunities' | 'matchmaker';
-    onNavigate: (view: 'opportunities' | 'matchmaker') => void;
-}
-
-export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => {
+export const Sidebar: React.FC = () => {
     return (
         <aside className="sidebar p-0 overflow-hidden">
             {/* Brand Section */}
@@ -19,7 +14,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => {
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[var(--bg-sidebar)] rounded-full"></div>
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold tracking-tight text-white group-hover:text-blue-400 transition-colors">Radar</h2>
+                        <h2 className="text-xl font-bold tracking-tight text-white group-hover:text-blue-400 transition-colors">Matchmaker</h2>
                         <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">Enterprise AI</span>
                     </div>
                 </div>
@@ -29,35 +24,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate }) => {
             <nav className="flex-1 px-4 space-y-1.5">
                 <p className="px-4 mb-4 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Platform</p>
 
-                <button
-                    onClick={() => onNavigate('opportunities')}
-                    className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 group
-                        ${activeView === 'opportunities'
-                            ? 'bg-blue-600/10 text-white shadow-sm ring-1 ring-blue-500/20'
-                            : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-                        }`}
+                <div
+                    className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold bg-blue-600/10 text-white shadow-sm ring-1 ring-blue-500/20 group cursor-default"
                 >
-                    <LayoutDashboard size={20} className={activeView === 'opportunities' ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'} />
-                    <span className="flex-1 text-left">Opportunity Radar</span>
-                    {activeView === 'opportunities' && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
-                    )}
-                </button>
-
-                <button
-                    onClick={() => onNavigate('matchmaker')}
-                    className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 group
-                        ${activeView === 'matchmaker'
-                            ? 'bg-blue-600/10 text-white shadow-sm ring-1 ring-blue-500/20'
-                            : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-                        }`}
-                >
-                    <Target size={20} className={activeView === 'matchmaker' ? 'text-blue-500' : 'text-slate-500 group-hover:text-slate-300'} />
+                    <Target size={20} className="text-blue-500" />
                     <span className="flex-1 text-left">Strategic Matchmaker</span>
-                    {activeView === 'matchmaker' && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
-                    )}
-                </button>
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+                </div>
             </nav>
 
             {/* Bottom Section */}

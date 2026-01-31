@@ -1,6 +1,7 @@
 import asyncio
 
 from app.core.database import Base, engine
+from app.models.company import CompanyProfile # Import models to register them with Base
 
 
 async def init_db():

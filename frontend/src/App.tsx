@@ -1,31 +1,23 @@
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from './components/Sidebar';
-import { RadarView } from './components/RadarView';
 import { MatchmakerView } from './components/MatchmakerView';
 import { Bell, ChevronDown } from 'lucide-react';
 
-type ViewState = 'opportunities' | 'matchmaker';
-
 function App() {
-  const [activeView, setActiveView] = useState<ViewState>('opportunities');
-
   return (
     <div className="flex bg-[#F4F7FB] min-h-screen font-sans selection:bg-blue-100 selection:text-blue-900 bg-mesh">
       {/* Sidebar with dark theme */}
-      <Sidebar activeView={activeView} onNavigate={setActiveView} />
+      <Sidebar />
 
       {/* Main Content Area */}
       <main className="flex-1 ml-[280px] p-10 max-w-[1600px] transition-all duration-300">
         <header className="flex justify-between items-start mb-12">
           <div className="space-y-1">
             <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">
-              {activeView === 'opportunities' ? 'Opportunity Radar' : 'Strategic Matchmaker'}
+              Strategic Matchmaker
             </h1>
             <p className="text-slate-500 font-medium text-lg">
-              {activeView === 'opportunities'
-                ? 'Real-time detection of high-probability outsourcing signals.'
-                : 'AI-powered synergy analysis for targeted client acquisition.'}
+              AI-powered synergy analysis for targeted client acquisition.
             </p>
           </div>
 
@@ -57,7 +49,6 @@ function App() {
 
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeView}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -68,11 +59,7 @@ function App() {
             }}
             className="w-full"
           >
-            {activeView === 'opportunities' ? (
-              <RadarView onEmptyStateAction={() => setActiveView('matchmaker')} />
-            ) : (
-              <MatchmakerView />
-            )}
+            <MatchmakerView />
           </motion.div>
         </AnimatePresence>
       </main>
