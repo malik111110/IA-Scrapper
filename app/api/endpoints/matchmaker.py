@@ -1,18 +1,27 @@
-from typing import List
-from fastapi import APIRouter, HTTPException
+from typing import List, Optional
+import json
+import asyncio
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.schemas.opportunity import MatchRequest, MatchResponse
 from app.services.search_service import search_service
 from app.services.crawler_service import CrawlerService
 from app.services.llm_service import llm_service
+from app.services.company_service import company_service
+from app.core.database import get_db
 from app.core.prompts import MATCHMAKER_SYSTEM_PROMPT, MATCHMAKER_EXTRACTION_PROMPT
-import json
-import asyncio
 
 router = APIRouter()
 crawler_service = CrawlerService()
 
 @router.post("/chat", response_model=List[MatchResponse])
-async def match_company(request: MatchRequest):
+async def match_company(request: MatchRequest, db: AsyncSession = Depends(get_db)):
+    # 0. Get company info from DB if not in request
+    user_info = request.user_company_info
+    if not user_info:
+        user_info = await company_service.get_company_context(db)
+
     # 1. Search for URLs across platforms
     search_tasks = [search_service.search_opportunities(p, request.search_query) for p in request.platforms]
     url_results = await asyncio.gather(*search_tasks)
@@ -28,7 +37,7 @@ async def match_company(request: MatchRequest):
          return []
 
     # 2. Process each URL with the matchmaker prompts
-    match_tasks = [process_match(url, request.user_company_info) for url in all_urls]
+    match_tasks = [process_match(url, user_info) for url in all_urls]
     results = await asyncio.gather(*match_tasks)
     
     # Filter out None results and sort by score

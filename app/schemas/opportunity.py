@@ -2,7 +2,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 class MatchRequest(BaseModel):
-    user_company_info: str
+    user_company_info: Optional[str] = None
     search_query: str
     platforms: List[str] = ["indeed", "openclassrooms"]
 
