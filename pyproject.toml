@@ -9,6 +9,7 @@ ignore = ["E501"]
 known-first-party = ["app"]
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = "test_*.py"
