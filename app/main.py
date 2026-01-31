@@ -9,16 +9,9 @@ app = FastAPI(title=settings.PROJECT_NAME)
 
 app.include_router(api_router, prefix="/api/v1")
 
-# Serve static files for the dashboard
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-from fastapi.responses import FileResponse
-
-@app.get("/", include_in_schema=False)
-async def root():
-    return FileResponse("static/index.html")
-
+# Serving the frontend will be handled by the build process or dev server
+# For production, you would mount the 'frontend/dist' folder here.
+# app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
 
 @app.get("/health")
 async def health_check():
