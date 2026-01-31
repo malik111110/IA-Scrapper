@@ -137,17 +137,29 @@ class OrchestratorService:
 
             data = json.loads(cleaned_json)
 
-            # Simple Scoring Heuristic
-            base_score = 0
+            # Extract signals
             signals_data = data.get("signals", [])
             signals = [TechSignal(**s) for s in signals_data]
-            for s in signals:
-                base_score += s.urgency * 2
+
+            # Weighted Scoring Heuristic from context.md
+            indicators = data.get("indicators", {})
+            hiring_velocity = float(indicators.get("hiring_velocity", 0))
+            funding_recency = float(indicators.get("funding_recency", 0))
+            stack_mismatch = float(indicators.get("stack_mismatch", 0))
+            security_pressure = float(indicators.get("security_pressure", 0))
+            internal_growth = float(indicators.get("internal_team_growth", 0))
+
+            # Score = Hiring Velocity + Funding Recency + Stack Mismatch + Security Pressure - Internal Team Growth
+            base_score = hiring_velocity + funding_recency + stack_mismatch + security_pressure - internal_growth
+            
+            # Normalize score to a reasonable range (e.g., 0-100) if needed, 
+            # but the formula provided is additive of 0-10 values mostly.
+            # Let's keep it raw for now as it makes the differences clear.
 
             classification = "Low agency fit"
-            if base_score > 15:
+            if base_score > 25:
                 classification = "High probability outsourcing candidate"
-            elif base_score > 8:
+            elif base_score > 12:
                 classification = "Mid-term opportunity"
 
             return Opportunity(
