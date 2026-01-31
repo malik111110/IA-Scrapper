@@ -8,4 +8,4 @@ class ScrapeResponse(BaseModel):
     url: str
     content_length: int
     markdown_preview: str
-    # extracted_data: str | None = None
+    extracted_data: str | None = None
