@@ -18,7 +18,21 @@ class OrchestratorService:
         # Reset normalization cache for a new run
         normalization_service.clear_cache()
         
-        tasks = [self.process_single_url(url) for url in urls]
+        # Pre-filter URLs by domain to avoid concurrent tasks for the same company in the same batch
+        unique_batch_urls = []
+        seen_batch_domains = set()
+        for url in urls:
+            domain = normalization_service.extract_domain(url)
+            if domain:
+                if domain not in seen_batch_domains:
+                    seen_batch_domains.add(domain)
+                    unique_batch_urls.append(url)
+                else:
+                    print(f"Pre-filtering duplicate domain in batch: {domain}")
+            else:
+                unique_batch_urls.append(url)
+
+        tasks = [self.process_single_url(url) for url in unique_batch_urls]
         results = await asyncio.gather(*tasks)
         
         # Filter out None results
@@ -99,12 +113,6 @@ class OrchestratorService:
                 opportunity.tech_stack = normalization_service.normalize_tech_stack(new_tech)
 
     async def process_single_url(self, url: str) -> Opportunity:
-        # 0. Early Exit: Domain-based check (before expensive LLM call)
-        domain = normalization_service.extract_domain(url)
-        if domain and domain in normalization_service._processed_domains:
-            print(f"Skipping URL {url} - Domain {domain} already processed.")
-            return None
-
         # 1. Scrape
         crawl_result = await self.crawler_service.crawl_url(url)
         if not crawl_result.success:
