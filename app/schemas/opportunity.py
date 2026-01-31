@@ -3,21 +3,31 @@ from typing import List, Optional
 from datetime import datetime
 
 class TechSignal(BaseModel):
-    category: str  # e.g., "Maturity", "Hiring", "Tech Stack"
+    id: Optional[int] = None
+    category: str
     description: str
     urgency: int = Field(ge=1, le=5)
+    
+    model_config = {"from_attributes": True}
 
 class Opportunity(BaseModel):
+    id: Optional[int] = None
     company_name: str
     sector: Optional[str] = None
     url: str
     score: float = 0.0
-    classification: str  # "High probability", "Mid-term", "Low fit"
+    classification: str
     signals: List[TechSignal]
     tech_stack: List[str]
     summary: str
-    detected_at: datetime = Field(default_factory=datetime.now)
+    detected_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
 
 class OrchestratorConfig(BaseModel):
     urls: List[str]
     instruction: Optional[str] = None
+
+class OpportunityListResponse(BaseModel):
+    total: int
+    opportunities: List[Opportunity]
